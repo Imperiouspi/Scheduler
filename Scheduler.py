@@ -6,6 +6,11 @@ import sys
 def printtime():
 	return time.strftime("%Y-%m-%d (%H:%M:%S)")
 
+def analyze(read):
+	if '- 01:30' in read:
+		print 'read'
+	return read
+
 if sys.platform == 'darwin':
 	fileprefix = '/Users/Noah/Workspaces/Scheduler/'
 	schedule = open(fileprefix + 'schedule.txt','w')
@@ -33,11 +38,12 @@ for line in todo:
 	if(line == "Projects\n"):
 			tomorrow = False
 
-	if((line != 'Due Tomorrow') and (line !="") and (line != "Projects")):
+	if((line != "Due Tomorrow\n") and (line !="") and (line != "Projects\n") and (line !="\n")):
+		appender = analyze(line)
 		if(tomorrow):
-			events_tom.append(line)
+			events_tom.append(appender)
 		else:
-			events_proj.append(line)
+			events_proj.append(appender)
 
 for i in events_tom:
 	schedule.write(i)

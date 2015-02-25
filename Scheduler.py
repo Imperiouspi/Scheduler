@@ -2,14 +2,40 @@ import os.path
 import datetime
 import time
 import sys
+import re
+from datetime import timedelta
 
 def printtime():
-	return time.strftime("%Y-%m-%d (%H:%M:%S)")
+	return time.strftime("%a %b %d, %Y (%H:%M:%S)")
 
 def analyze(read):
-	if '- 01:30' in read:
-		print 'read'
-	return read
+	topic = "OOPS"
+	if re.match('.* - [0-2][0-9]:[0-5][0-9]\n', read):
+		print "Timed: " + read
+		found = re.search('.* (?=- [0-2][0-9]:[0-5][0-9])', read)
+		time = re.search('[0-2][0-9]:[0-5][0-9]', read)
+		topic = found.group(0) + "\n"
+	if topic == "OOPS":
+		return read, topic
+	else:
+		return topic, time.group(0)
+
+def findTimeSlot(timeScheduled, topic):
+	hourTime = re.search('.*(?=:[0-5][0-9])', timeScheduled)
+	hourTime = hourTime.group(0)
+	
+	minuteTime = re.search('(?<=[0-5][0-9]:).*', timeScheduled)
+	minuteTime = minuteTime.group(0)
+	
+	timeScheduled = datetime.timedelta(minutes = int(minuteTime), hours = int(hourTime))
+	time = str(timeScheduled)
+
+	time = time[:-3]
+	print time
+	return time + " " + topic
+
+def giveTimeSlot(topic):
+	return "1:30 " + topic
 
 if sys.platform == 'darwin':
 	fileprefix = '/Users/Noah/Workspaces/Scheduler/'
@@ -29,9 +55,9 @@ else:
 	todo = open(fileprefix + 'ToDo.txt','r')
 
 #Header
-schedule.write("Noah's Schedule" + " " + printtime())
+schedule.write("Noah's Schedule:" + " " + printtime())
 
-events_tom = ["\nArrive Home\n"]
+events_tom = ["\nBegin Work\n"]
 events_proj = []
 tomorrow = True
 for line in todo:
@@ -39,7 +65,11 @@ for line in todo:
 			tomorrow = False
 
 	if((line != "Due Tomorrow\n") and (line !="") and (line != "Projects\n") and (line !="\n")):
-		appender = analyze(line)
+		appender, topicTime = analyze(line)
+		if topicTime != "OOPS":
+			appender = findTimeSlot(topicTime, appender)
+		else:
+			appender = giveTimeSlot(appender)
 		if(tomorrow):
 			events_tom.append(appender)
 		else:

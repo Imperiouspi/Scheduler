@@ -5,8 +5,18 @@ import sys
 import re
 from datetime import timedelta
 
+StartTime = datetime.timedelta(minutes = int(time.strftime("%M")), hours = int(time.strftime("%H")))
+NowTime = StartTime
+Adjuster = datetime.timedelta(minutes = 0, hours = 12)
+if int(time.strftime("%H")) > 12:
+	NowTime = NowTime - Adjuster
+
 def printtime():
-	return time.strftime("%a %b %d, %Y (%H:%M:%S)")
+	date = time.strftime("%a %b %d, %Y (%H:%M)")
+	if int(time.strftime("%H")) > 12:
+		Hours = int(time.strftime("%H"))-12
+		date = time.strftime("%a %b %d, %Y (" + str(Hours) + ":%M)")
+	return date
 
 def analyze(read):
 	topic = "OOPS"
@@ -20,22 +30,25 @@ def analyze(read):
 	else:
 		return topic, time.group(0)
 
-def findTimeSlot(timeScheduled, topic):
+def findTimeScheduled(timeScheduled, topic):
+	global NowTime
 	hourTime = re.search('.*(?=:[0-5][0-9])', timeScheduled)
 	hourTime = hourTime.group(0)
 	
 	minuteTime = re.search('(?<=[0-5][0-9]:).*', timeScheduled)
 	minuteTime = minuteTime.group(0)
 	
-	timeScheduled = datetime.timedelta(minutes = int(minuteTime), hours = int(hourTime))
-	time = str(timeScheduled)
-
+	time = str(NowTime)
 	time = time[:-3]
-	print time
+	print(time)
+
+	timeScheduled = datetime.timedelta(minutes = int(minuteTime), hours = int(hourTime))
+	NowTime = timeSlot(NowTime, timeScheduled)
+	
 	return time + " " + topic
 
-def giveTimeSlot(topic):
-	return "1:30 " + topic
+def timeSlot(last, length):
+	return (last + length)
 
 if sys.platform == 'darwin':
 	fileprefix = '/Users/Noah/Workspaces/Scheduler/'
@@ -46,7 +59,7 @@ if sys.platform == 'darwin':
 
 	todo = open(fileprefix + 'ToDo.txt','r')
 else:
-	fileprefix = 'H:\Python'
+	fileprefix = 'H:\Python\\'
 	schedule = open(fileprefix + 'schedule.txt','w')
 
 	if(not(os.path.isfile(fileprefix + 'ToDo.txt'))):
@@ -57,7 +70,7 @@ else:
 #Header
 schedule.write("Noah's Schedule:" + " " + printtime())
 
-events_tom = ["\nBegin Work\n"]
+events_tom = ["\n"]
 events_proj = []
 tomorrow = True
 for line in todo:
@@ -67,14 +80,14 @@ for line in todo:
 	if((line != "Due Tomorrow\n") and (line !="") and (line != "Projects\n") and (line !="\n")):
 		appender, topicTime = analyze(line)
 		if topicTime != "OOPS":
-			appender = findTimeSlot(topicTime, appender)
+			appender = findTimeScheduled(topicTime, appender)
 		else:
-			appender = giveTimeSlot(appender)
+			appender = findTimeScheduled("01:30", appender)
 		if(tomorrow):
 			events_tom.append(appender)
 		else:
 			events_proj.append(appender)
-
+events_proj.append("\n" + str(NowTime)[:-3] + " Go to Bed!")
 for i in events_tom:
 	schedule.write(i)
 

@@ -49,7 +49,9 @@ def findTimeScheduled(timeScheduled, topic):
 
 def timeSlot(last, length):
 	return (last + length)
-
+def addEvent(appendee, breaker):
+	events_tom.append(appender)
+	events_tom.append(breaker)
 if sys.platform == 'darwin':
 	fileprefix = '/Users/Noah/Workspaces/Scheduler/'
 	schedule = open(fileprefix + 'schedule.txt','w')
@@ -73,6 +75,8 @@ schedule.write("Noah's Schedule:" + " " + printtime())
 events_tom = ["\n"]
 events_proj = []
 tomorrow = True
+breakTime = ""
+
 for line in todo:
 	if(line == "Projects\n"):
 			tomorrow = False
@@ -83,9 +87,13 @@ for line in todo:
 			appender = findTimeScheduled(topicTime, appender)
 		else:
 			appender = findTimeScheduled("01:30", appender)
+
+		breakTime = findTimeScheduled("00:15", "Break\n")
+
 		if(tomorrow):
-			events_tom.append(appender)
+			addEvent(appender, breakTime)
 		else:
+			#addProject()
 			events_proj.append(appender)
 events_proj.append("\n" + str(NowTime)[:-3] + " Go to Bed!")
 for i in events_tom:
